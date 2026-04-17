@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Album Roulette</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="album-roulette.css">
+
+  <!-- Extra styles for the CSV upload drop zone and step list -->
+  <style>
+    .steps { display: flex; flex-direction: column; gap: 14px; margin-bottom: 4px; }
+    .step  { display: flex; gap: 12px; align-items: flex-start; }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--gold-dim); font-size: 10px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 1px;
+    }
+    .step-body { flex: 1; }
+    .step-title { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+    .step-desc  { font-size: 10px; color: var(--text-dim); line-height: 1.7; }
+    .step-desc code { color: var(--text-mid); background: var(--surface2); padding: 1px 4px; border-radius: 2px; }
+
+    /* Drop zone */
+    #drop-zone {
+      border: 1.5px dashed var(--border);
+      border-radius: 3px;
+      padding: 20px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+    }
+    #drop-zone:hover,
+    #drop-zone.drag-over {
+      border-color: var(--gold-dim);
+      background: rgba(201,168,76,.05);
+    }
+    #drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    #drop-zone .dz-icon  { font-size: 24px; opacity: .4; margin-bottom: 8px; }
+    #drop-zone .dz-label { font-size: 11px; color: var(--text-dim); line-height: 1.6; }
+    #drop-zone .dz-label strong { color: var(--gold-dim); }
+
+    /* Storage info box */
+    #storage-info {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 12px 14px;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="logo">
+      Album Roulette
+      <span>Discover your library</span>
+    </div>
+    <div class="header-right">
+      <div id="connection-status">
+        <div class="dot" id="status-dot"></div>
+        <span id="status-text">Not connected</span>
+      </div>
+      <button id="gear-btn" onclick="toggleDrawer()" title="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- ── Drawer backdrop ── -->
+  <div id="drawer-backdrop" onclick="closeDrawer()"></div>
+
+  <!-- ── Settings Drawer ── -->
+  <div id="settings-drawer">
+    <div class="drawer-header">
+      <div class="drawer-title">⚙ &nbsp;Setup &amp; Configuration</div>
+      <button id="close-drawer" onclick="closeDrawer()">✕</button>
+    </div>
+
+    <div class="drawer-body">
+
+      <!-- Current data status -->
+      <div class="section-label">Your library</div>
+      <div id="storage-info">
+        <div style="color:var(--text-dim);font-size:11px;">No data loaded yet.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Upload CSV -->
+      <div class="section-label">Upload a CSV</div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <div class="step-title">Prepare your spreadsheet</div>
+            <div class="step-desc">
+              Your CSV needs at least two columns: one for the band/artist and one for the album title.
+              A third column for "last listened" date is optional but lets the app track what you've heard.
+              Export from Excel, Google Sheets, or any spreadsheet app as <code>.csv</code>.
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <div class="step-title">Configure column letters below</div>
+            <div class="step-desc">
+              Tell the app which column holds each field. Defaults are A, B, C.
+              If your sheet has a header row, leave the option set to "Header row."
+            </div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <div class="step-title">Drop or choose your file</div>
+            <div class="step-desc">
+              Everything is stored locally in your browser — nothing leaves your device.
+              Re-uploading later will add new albums while keeping any listen dates you've logged.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="section-label">Column mapping</div>
+
+      <div class="col-map">
+        <div class="field">
+          <label>Band</label>
+          <input type="text" id="col-band" value="A" maxlength="2">
+        </div>
+        <div class="field">
+          <label>Album</label>
+          <input type="text" id="col-album" value="B" maxlength="2">
+        </div>
+        <div class="field">
+          <label>Last Listen</label>
+          <input type="text" id="col-date" value="C" maxlength="2">
+        </div>
+      </div>
+      <div class="hint" style="margin-top:6px;">Column letters for each field in your CSV.</div>
+
+      <div class="field" style="margin-top:12px;">
+        <label>First row</label>
+        <select id="has-header">
+          <option value="yes">Header row (skip row 1)</option>
+          <option value="no">Data starts at row 1</option>
+        </select>
+      </div>
+
+      <div style="margin-top:16px;">
+        <div id="drop-zone"
+             ondragover="event.preventDefault(); this.classList.add('drag-over')"
+             ondragleave="this.classList.remove('drag-over')"
+             ondrop="this.classList.remove('drag-over'); handleCSVFile(event.dataTransfer.files[0])">
+          <input type="file" accept=".csv,text/csv" onchange="handleCSVFile(this.files[0])">
+          <div class="dz-icon">⬆</div>
+          <div class="dz-label">
+            <strong>Click to choose</strong> or drag &amp; drop a CSV file here
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; text-align:center;">
+        <button class="btn btn-ghost" style="font-size:10px; padding:6px 14px; width:100%;"
+                onclick="loadDemo()">
+          Try with demo data instead
+        </button>
+      </div>
+
+      <div class="divider"></div>
+
+      <button class="btn btn-danger" onclick="resetAll()">
+        ✕ &nbsp;Clear saved data &amp; reset
+      </button>
+
+    </div><!-- /.drawer-body -->
+  </div><!-- /#settings-drawer -->
+
+  <!-- ── Main content ── -->
+  <main>
+
+    <!-- Welcome / first-run screen -->
+    <div id="setup-screen">
+      <div class="big-icon">◎</div>
+      <h2>Your next listen awaits.</h2>
+      <p>
+        Upload a CSV of your albums. We'll pick something you haven't heard
+        in over a year and let you log it when you do. Everything stays in your browser.
+      </p>
+      <div class="welcome-btns">
+        <button class="btn btn-welcome-main" onclick="openDrawer()">⚙ &nbsp;Upload a CSV</button>
+        <button class="btn btn-welcome-sub"  onclick="loadDemo()">Try with demo data</button>
+      </div>
+    </div>
+
+    <!-- Album card -->
+    <div id="album-card">
+      <div class="card-inner">
+        <div class="card-accent"></div>
+        <div class="card-body">
+          <div class="album-number" id="card-count"></div>
+          <div class="vinyl-art">
+            <div class="vinyl-record" id="vinyl"></div>
+          </div>
+          <div class="album-band"  id="card-band"></div>
+          <div class="album-title" id="card-album"></div>
+          <div class="album-meta"  id="card-meta"></div>
+          <div class="card-prompt">Have you listened to this album in the past year?</div>
+          <div class="card-actions">
+            <button class="btn btn-yes" onclick="markListened()">✓ &nbsp;Yes, I have</button>
+            <button class="btn btn-no"  onclick="skipAlbum()">→ &nbsp;Give me another</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats bar -->
+    <div id="stats-bar">
+      <div class="stat">
+        <div class="stat-val" id="stat-total">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="stat-unheard">0</div>
+        <div class="stat-label">To discover</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="stat-marked">0</div>
+        <div class="stat-label">Marked today</div>
+      </div>
+    </div>
+
+    <div id="skipped-note"></div>
+
+    <!-- All done screen -->
+    <div id="done-screen">
+      <div class="big-icon">✦</div>
+      <h2>All caught up!</h2>
+      <p>
+        You've worked through every album that hasn't been heard in over a year.
+        Come back later for more discoveries.
+      </p>
+      <button class="btn btn-ghost" style="margin-top:22px;" onclick="restartSession()">
+        Start Over
+      </button>
+    </div>
+
+  </main>
+
+  <!-- ── Overlays ── -->
+  <div id="toast"></div>
+
+  <script src="album-roulette.js"></script>
+</body>
+</html>
