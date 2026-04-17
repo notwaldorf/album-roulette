@@ -388,20 +388,15 @@ function markListened() {
   skipped.delete(current);
   updateStats();
 
-  // Persist the updated listen date to localStorage (unless demo mode)
+  // Persist the updated listen date to localStorage
   const stored = getStored();
-  if (stored.source !== 'demo' && stored.albums) {
-    const updated = stored.albums.map(sa => {
-      if (sa.band === a.band && sa.album === a.album) {
-        return { ...sa, lastListen: today };
-      }
-      return sa;
-    });
+  if (stored.albums) {
+    const updated = stored.albums.map(sa =>
+      sa.band === a.band && sa.album === a.album ? { ...sa, lastListen: today } : sa
+    );
     setStored({ albums: updated });
-    showToast(`✓ Saved "${a.album}" — ${today}`, 'success');
-  } else {
-    showToast(`✓ Marked "${a.album}"`, 'success');
   }
+  showToast(`✓ Marked "${a.album}"`, 'success');
 
   pickNext();
 }
