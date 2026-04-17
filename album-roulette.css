@@ -172,9 +172,6 @@ header {
   font-family: var(--mono); font-size: 11px; cursor: pointer;
   letter-spacing: .5px; transition: all .15s; font-weight: 700; text-transform: uppercase;
 }
-.btn-gold { background: var(--gold); color: #0e0c0a; border-color: var(--gold); width: 100%; }
-.btn-gold:hover { background: #dbb85a; }
-.btn-gold:disabled { opacity: .35; cursor: not-allowed; }
 .btn-ghost { background: transparent; color: var(--text-mid); border-color: var(--border); }
 .btn-ghost:hover { border-color: var(--text-mid); color: var(--text); }
 .btn-danger {
@@ -222,7 +219,7 @@ main {
   from { opacity: 0; transform: translateY(18px) scale(.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
 
 /* Album card */
 #album-card {
@@ -247,9 +244,7 @@ main {
 #vinyl-canvas {
   width: 120px; height: 120px; border-radius: 50%;
   display: block;
-  animation: spin 8s linear infinite; animation-play-state: paused;
 }
-#vinyl-canvas.spinning { animation-play-state: running; }
 /* gold centre spindle hole */
 .vinyl-art::after {
   content: ''; position: absolute; top: 50%; left: 50%;
@@ -313,22 +308,6 @@ main {
 }
 #done-screen p { color: var(--text-dim); font-size: 12px; line-height: 1.7; }
 
-/* Saving overlay */
-#saving-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(14,12,10,.7); backdrop-filter: blur(4px);
-  align-items: center; justify-content: center;
-  z-index: 10000; flex-direction: column; gap: 14px;
-}
-#saving-overlay.show { display: flex; }
-.spinner {
-  width: 36px; height: 36px; border: 2px solid var(--border);
-  border-top-color: var(--gold); border-radius: 50%;
-  animation: spin .8s linear infinite;
-}
-#saving-overlay span {
-  font-size: 11px; color: var(--text-mid); letter-spacing: 2px; text-transform: uppercase;
-}
 
 /* Toast */
 #toast {

@@ -70,7 +70,6 @@ function showScreen(name) {
   document.getElementById('stats-bar').classList.toggle('visible', name !== 'setup');
   if (name !== 'card') {
     document.getElementById('skipped-note').style.display = 'none';
-    //document.getElementById('vinyl-canvas').classList.remove('spinning');
   }
 }
 
@@ -216,7 +215,7 @@ function renderStorageInfo() {
 function loadDemo() {
   const old    = `1/1/${new Date().getFullYear() - 2}`;
   const recent = `6/1/${new Date().getFullYear()}`;
-  albums = [
+  const base = [
     { band: 'Radiohead',      album: 'OK Computer',           lastListen: old    },
     { band: 'The Beatles',    album: 'Abbey Road',            lastListen: ''     },
     { band: 'David Bowie',    album: 'Ziggy Stardust',        lastListen: recent },
@@ -230,7 +229,19 @@ function loadDemo() {
     { band: 'Talking Heads',  album: 'Remain in Light',       lastListen: old    },
     { band: 'Björk',          album: 'Homogenic',             lastListen: ''     },
   ];
-  setStored({ source: 'demo' });
+
+  // Merge with any saved listen dates
+  const stored = getStored();
+  const existingMap = {};
+  (stored.albums || []).forEach(a => {
+    existingMap[(a.band + '|||' + a.album).toLowerCase()] = a.lastListen || '';
+  });
+  albums = base.map(a => {
+    const key = (a.band + '|||' + a.album).toLowerCase();
+    return existingMap.hasOwnProperty(key) ? { ...a, lastListen: existingMap[key] } : a;
+  });
+
+  setStored({ source: 'demo', albums });
   setStatus('live', 'Demo data');
   showToast('Demo data loaded!', 'success');
   closeDrawer();
@@ -268,9 +279,7 @@ function renderCard(a) {
     a.lastListen ? `Last listened: ${a.lastListen}` : 'Never logged';
 
   const canvas = document.getElementById('vinyl-canvas');
-  //canvas.classList.remove('spinning');
   drawTruchet(canvas, a.band, a.album);
-  //requestAnimationFrame(() => requestAnimationFrame(() => canvas.classList.add('spinning')));
 
   const note = document.getElementById('skipped-note');
   note.style.display = skipped.size > 0 ? 'block' : 'none';
@@ -431,6 +440,13 @@ function resetAll() {
     if (c.colAlbum)  document.getElementById('col-album').value  = c.colAlbum;
     if (c.colDate)   document.getElementById('col-date').value   = c.colDate;
     if (c.hasHeader) document.getElementById('has-header').value = c.hasHeader;
+  }
+
+  if (stored.source === 'demo' && stored.albums && stored.albums.length > 0) {
+    albums = stored.albums;
+    setStatus('live', 'Demo data');
+    initSession();
+    return;
   }
 
   if (stored.source === 'demo') {
