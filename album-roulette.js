@@ -70,7 +70,7 @@ function showScreen(name) {
   document.getElementById('stats-bar').classList.toggle('visible', name !== 'setup');
   if (name !== 'card') {
     document.getElementById('skipped-note').style.display = 'none';
-    document.getElementById('vinyl').classList.remove('spinning');
+    //document.getElementById('vinyl-canvas').classList.remove('spinning');
   }
 }
 
@@ -267,13 +267,99 @@ function renderCard(a) {
   document.getElementById('card-meta').textContent  =
     a.lastListen ? `Last listened: ${a.lastListen}` : 'Never logged';
 
-  const v = document.getElementById('vinyl');
-  v.classList.remove('spinning');
-  requestAnimationFrame(() => requestAnimationFrame(() => v.classList.add('spinning')));
+  const canvas = document.getElementById('vinyl-canvas');
+  //canvas.classList.remove('spinning');
+  drawTruchet(canvas, a.band, a.album);
+  //requestAnimationFrame(() => requestAnimationFrame(() => canvas.classList.add('spinning')));
 
   const note = document.getElementById('skipped-note');
   note.style.display = skipped.size > 0 ? 'block' : 'none';
   note.textContent   = `${skipped.size} album${skipped.size > 1 ? 's' : ''} passed this round`;
+}
+
+// ── Tri-tree truchet ───────────────────────────────────────────────────────
+const _hs3   = Math.sqrt(3) / 2;
+const _sixth = Math.PI / 3;
+
+function _mulberry32(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s += 0x6D2B79F5;
+    let t = Math.imul(s ^ s >>> 15, 1 | s);
+    t ^= t + Math.imul(t ^ t >>> 7, 61 | t);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+function _fnv1a(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+function drawTruchet(canvas, band, album) {
+  const W   = canvas.width;
+  const ctx = canvas.getContext('2d');
+  const rng = _mulberry32(_fnv1a(band + '\x00' + album));
+
+  // Derive palette from seed
+  const hue  = rng() * 360;
+  const hue2 = (hue + 140 + rng() * 80) % 360;
+  const pal  = [
+    `hsl(${hue  |0},${25+rng()*30|0}%,${10+rng()*8|0}%)`,  // bg / outline
+    `hsl(${hue2 |0},${35+rng()*35|0}%,${55+rng()*20|0}%)`, // fill arcs
+  ];
+
+  const sw              = W * 0.075;
+  const splitChance     = 0.5;
+  const forceSplitLayer = 3;
+
+  ctx.save();
+  ctx.fillStyle = pal[0];
+  ctx.fillRect(0, 0, W, W);
+  ctx.beginPath();
+  ctx.arc(W / 2, W / 2, W / 2, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.translate(W / 2, W / 2);
+  ctx.lineCap   = 'round';
+  ctx.lineWidth = sw / 2;
+
+  function outlined_arc(x, y, s, a1, a2) {
+    ctx.strokeStyle = pal[1];
+    ctx.beginPath(); ctx.arc(x, y, s / 2, a1, a2); ctx.stroke();
+    ctx.strokeStyle = pal[0];
+    ctx.beginPath(); ctx.arc(x, y, (s + sw) / 2, a1, a2); ctx.stroke();
+  }
+
+  function truchet(x, y, s, up) {
+    ctx.save();
+    ctx.translate(x, y);
+    if (!up) ctx.rotate(Math.PI);
+    const r  = rng() * 3 | 0;
+    const rp = Math.round(s / sw);
+    for (let i = 0; i < rp * (r === 0 ? 0.75 : 0.5); i++)
+      outlined_arc(-s / 2,        _hs3 * 0.5 * s,  sw * (2*i+1), -_sixth, 0);
+    for (let i = 0; i < rp * (r === 1 ? 0.75 : 0.5); i++)
+      outlined_arc( s / 2,        _hs3 * 0.5 * s,  sw * (2*i+1), Math.PI, Math.PI + _sixth);
+    for (let i = 0; i < rp * (r === 2 ? 0.75 : 0.5); i++)
+      outlined_arc(0,        -s * _hs3 * 0.5,  sw * (2*i+1), _sixth, 2 * _sixth);
+    ctx.restore();
+  }
+
+  function splitTri(x, y, s, up, l, forced) {
+    if (forced || (rng() < splitChance && s > sw * 4)) {
+      const nf = (l + 1) < forceSplitLayer;
+      const dy = s * (up ? 1 : -1) * _hs3 / 4;
+      splitTri(x,       y + dy,  s/2, !up, l+1, nf);
+      splitTri(x,       y - dy,  s/2,  up, l+1, nf);
+      splitTri(x - s/4, y + dy,  s/2,  up, l+1, nf);
+      splitTri(x + s/4, y + dy,  s/2,  up, l+1, nf);
+    } else {
+      truchet(x, y, s, up);
+    }
+  }
+
+  splitTri(0, 0, sw * (2 ** 7), true, 0, true);
+  ctx.restore();
 }
 
 function skipAlbum() {

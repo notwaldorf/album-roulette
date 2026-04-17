@@ -243,22 +243,20 @@ main {
   color: var(--gold-dim); margin-bottom: 22px;
 }
 
-.vinyl-art { width: 120px; height: 120px; margin: 0 auto 26px; }
-.vinyl-record {
+.vinyl-art { width: 120px; height: 120px; margin: 0 auto 26px; position: relative; }
+#vinyl-canvas {
   width: 120px; height: 120px; border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, #1a1714 15%, transparent 15%),
-    repeating-radial-gradient(circle at 50% 50%, #1a1714 0, #1a1714 2px, #242018 2px, #242018 4px);
-  border: 2px solid #333028;
+  display: block;
   animation: spin 8s linear infinite; animation-play-state: paused;
-  position: relative;
 }
-.vinyl-record::after {
+#vinyl-canvas.spinning { animation-play-state: running; }
+/* gold centre spindle hole */
+.vinyl-art::after {
   content: ''; position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%); width: 18px; height: 18px;
-  border-radius: 50%; background: var(--gold); opacity: .8;
+  transform: translate(-50%, -50%); width: 10px; height: 10px;
+  border-radius: 50%; background: var(--gold); opacity: .85;
+  pointer-events: none;
 }
-.vinyl-record.spinning { animation-play-state: running; }
 
 .album-band {
   font-family: var(--serif); font-size: 13px; color: var(--gold);

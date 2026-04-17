@@ -211,7 +211,7 @@
         <div class="card-body">
           <div class="album-number" id="card-count"></div>
           <div class="vinyl-art">
-            <div class="vinyl-record" id="vinyl"></div>
+            <canvas id="vinyl-canvas" width="240" height="240"></canvas>
           </div>
           <div class="album-band"  id="card-band"></div>
           <div class="album-title" id="card-album"></div>
@@ -219,7 +219,7 @@
           <div class="card-prompt">Have you listened to this album in the past year?</div>
           <div class="card-actions">
             <button class="btn btn-yes" onclick="markListened()">✓ &nbsp;Yes, I have</button>
-            <button class="btn btn-no"  onclick="skipAlbum()">→ &nbsp;Give me another</button>
+            <button class="btn btn-no"  onclick="skipAlbum()">→ &nbsp;Not right now</button>
           </div>
         </div>
       </div>
