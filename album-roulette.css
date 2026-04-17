@@ -132,7 +132,7 @@ header {
 }
 #close-drawer:hover { color: var(--text); }
 
-.drawer-body { padding: 20px; flex: 1; }
+.drawer-body { padding: 20px; flex: 1; padding-bottom: 80px}
 
 
 /* Form elements */
